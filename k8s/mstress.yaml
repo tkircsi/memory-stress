@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mstress
+  name: mstress
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mstress
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: mstress
+    spec:
+      volumes:
+      - name: tmp-vol
+        emptyDir: {}
+      initContainers:
+      - name: init-container
+        image: busybox
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp-vol
+        command:
+        - /bin/sh
+        - -c
+        - truncate -s 5M /tmp/large.file
+      containers:
+      - image: tkircsi/memory-stress:v1.0
+        name: mstress
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp-vol
+        env:
+        - name: LARGE_FILE
+          value: "/tmp/large.file"
+        resources:
+          limits:
+            memory: 50M
+            cpu: 50m
+          requests:
+            memory: 30M
+            cpu: 20m
